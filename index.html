@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>文本字符清理工具</title>
+    <title>AI文本格式清理工具</title>
     <style>
         * {
             box-sizing: border-box;
@@ -13,7 +13,7 @@
         }
         
         body {
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            background: linear-gradient(135deg, #433467 0%, #1f2c44 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -23,7 +23,7 @@
         
         .container {
             width: 100%;
-            max-width: 800px;
+            max-width: 900px;
             background: rgba(255, 255, 255, 0.95);
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
@@ -73,6 +73,7 @@
             font-size: 1rem;
             resize: vertical;
             transition: border-color 0.3s;
+            line-height: 1.6;
         }
         
         textarea:focus {
@@ -133,6 +134,35 @@
             font-size: 1.2rem;
         }
         
+        .features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #f8f9ff;
+            border-radius: 12px;
+            border: 1px solid #eaeefd;
+        }
+        
+        .feature-card {
+            flex: 1;
+            min-width: 200px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            border-left: 4px solid #4776E6;
+        }
+        
+        .feature-card h3 {
+            color: #4776E6;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
         footer {
             text-align: center;
             padding: 20px;
@@ -141,7 +171,7 @@
             border-top: 1px solid #eee;
         }
         
-        @media (max-width: 600px) {
+        @media (max-width: 768px) {
             h1 {
                 font-size: 2rem;
             }
@@ -158,14 +188,18 @@
                 flex-direction: column;
                 gap: 10px;
             }
+            
+            .features {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>文本字符清理工具</h1>
-            <div class="subtitle">快速移除文本中的 # 和 * 符号</div>
+            <h1>AI文本清理工具</h1>
+            <div class="subtitle">移除特殊字符并优化换行格式</div>
         </header>
         
         <div class="content">
@@ -174,10 +208,13 @@
                 <textarea id="inputText" placeholder="在此输入需要清理的文本..."></textarea>
                 <div class="stats">
                     <div class="stat-item">
-                        <i>📝</i> 字符数: <span id="charCount">0</span>
+                        <i class="fas fa-font"></i> 字符数: <span id="charCount">0</span>
                     </div>
                     <div class="stat-item">
-                        <i>🔍</i> 特殊字符: <span id="specialCharCount">0</span>
+                        <i class="fas fa-asterisk"></i> 特殊字符: <span id="specialCharCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-exchange-alt"></i> 换行符: <span id="newlineCount">0</span>
                     </div>
                 </div>
             </div>
@@ -187,19 +224,20 @@
             </div>
             
             <div class="output-section">
-                <label for="outputText">清理结果：<span>(已移除所有 # 和 * 符号)</span></label>
+                <label for="outputText">清理结果：<span>(已移除所有#、*等符号并压缩多余换行符)</span></label>
                 <textarea id="outputText" readonly placeholder="清理后的文本将显示在这里..."></textarea>
                 <div class="stats">
                     <div class="stat-item">
-                        <i>✅</i> 已移除: <span id="removedCount">0</span> 个特殊字符
+                        <i class="fas fa-trash-alt"></i> 移除特殊字符: <span id="removedSpecialCount">0</span>
                     </div>
                     <div class="stat-item">
-                        <i>⏱️</i> 用时: <span id="timeTaken">0</span> ms
+                        <i class="fas fa-compress-alt"></i> 压缩换行符: <span id="compressedNewlines">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-stopwatch"></i> 用时: <span id="timeTaken">0</span> ms
                     </div>
                 </div>
             </div>
-        </div>
-        
         <footer>
             <p>文本字符清理工具 &copy; 2025 | AI文本处理</p>
         </footer>
@@ -210,7 +248,9 @@
         const outputText = document.getElementById('outputText');
         const charCount = document.getElementById('charCount');
         const specialCharCount = document.getElementById('specialCharCount');
-        const removedCount = document.getElementById('removedCount');
+        const newlineCount = document.getElementById('newlineCount');
+        const removedSpecialCount = document.getElementById('removedSpecialCount');
+        const compressedNewlines = document.getElementById('compressedNewlines');
         const timeTaken = document.getElementById('timeTaken');
         
         // 更新输入文本统计信息
@@ -219,8 +259,12 @@
             charCount.textContent = text.length;
             
             // 计算特殊字符数量
-            const specialChars = text.match(/[#*-]/g) || [];
+            const specialChars = text.match(/[#*]/g) || [];
             specialCharCount.textContent = specialChars.length;
+            
+            // 计算换行符数量
+            const newlines = text.match(/\n/g) || [];
+            newlineCount.textContent = newlines.length;
         });
         
         // 转换文本函数
@@ -229,26 +273,61 @@
             const text = inputText.value;
             
             if (!text.trim()) {
-                outputText.value = "请输入一些文本进行清理";
+                outputText.value = "";
                 return;
             }
             
-            // 移除所有字符
-            const cleanedText = text.replace(/[#*-]/g, '');
-            outputText.value = cleanedText;
+            // 移除所有 # 和 * 字符
+            const withoutSpecialChars = text.replace(/[#*-]/g, '');
+            const originalSpecialCount = (text.match(/[#*-]/g) || []).length;
+            const newSpecialCount = (withoutSpecialChars.match(/[#*-]/g) || []).length;
+            const removedSpecial = originalSpecialCount - newSpecialCount;
+            
+            // 2. 删除多余空格但保留英文单词间的空格
+            let cleanedText = withoutSpecialChars;
+
+            // 删除中文之间、中英文之间的空格
+            // 保留英文单词和数字之间的空格
+            cleanedText = cleanedText.replace(/([\u4e00-\u9fa5])\s+([\u4e00-\u9fa5])/g, '$1$2'); // 中文之间的空格
+            cleanedText = cleanedText.replace(/([\u4e00-\u9fa5])\s+([a-zA-Z0-9])/g, '$1$2'); // 中文后跟英文/数字的空格
+            cleanedText = cleanedText.replace(/([a-zA-Z0-9])\s+([\u4e00-\u9fa5])/g, '$1$2'); // 英文/数字后跟中文的空格
+            
+            // 3. 压缩多个连续换行符为单个换行符
+            // 正则解释：匹配两个或更多连续的换行符（包括中间有空格的情况）
+            cleanedText = cleanedText.replace(/(\n\s*){2,}/g, '\n');
+            // 压缩多个连续换行符为单个换行符
+            // 正则解释：匹配两个或更多连续的换行符（包括中间有空格的情况）
+            const compressedText = withoutSpecialChars.replace(/(\n\s*){2,}/g, '\n');
+            
+            // 删除开头和结尾的空格
+            cleanedText = cleanedText.trim();
+            // 删除连续多个空格（保留一个）
+            cleanedText = cleanedText.replace(/ {1,}/g, '');
+                       
+            // 计算压缩的换行符数量
+            const originalNewlines = (text.match(/\n/g) || []).length;
+            const newNewlines = (compressedText.match(/\n/g) || []).length;
+            const compressedLines = originalNewlines - newNewlines;
+            
+            outputText.value = compressedText;
             
             const endTime = performance.now();
             const duration = (endTime - startTime).toFixed(2);
             
             // 更新统计信息
-            const originalSpecialCount = (text.match(/[#*-]/g) || []).length;
-            const newSpecialCount = (cleanedText.match(/[#*-]/g) || []).length;
-            removedCount.textContent = originalSpecialCount - newSpecialCount;
+            removedSpecialCount.textContent = removedSpecial;
+            compressedNewlines.textContent = compressedLines;
             timeTaken.textContent = duration;
         }
         
-        // 初始化
-        inputText.dispatchEvent(new Event('input'));
+        // 初始化页面
+        function init() {
+            inputText.dispatchEvent(new Event('input'));
+            convertText();
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
