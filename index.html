@@ -109,7 +109,13 @@
         .convert-btn:active {
             transform: translateY(1px);
         }
-        
+
+        /* 添加成功状态的按钮样式 */
+        .convert-btn.success {
+            background: linear-gradient(to right, #22c55e, #16a34a);
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+        }
+
         .output-section label span {
             color: #4776E6;
         }
@@ -237,6 +243,11 @@
                         <i class="fas fa-stopwatch"></i> 用时: <span id="timeTaken">0</span> ms
                     </div>
                 </div>
+                    <div class="button-container">
+                    <button class="convert-btn" id="copyButton" onclick="copyToClipboard()">
+                        <i class="fa fa-copy"></i> 复制到剪切板
+                    </button>
+                </div>
             </div>
         <footer>
             <p>文本字符清理工具 &copy; 2025 | AI文本处理</p>
@@ -319,7 +330,38 @@
             compressedNewlines.textContent = compressedLines;
             timeTaken.textContent = duration;
         }
-        
+        // 复制到剪切板函数
+        function copyToClipboard() {
+            const textToCopy = outputText.value;
+            
+            if (!textToCopy) {
+                alert('没有可复制的文本！');
+                return;
+            }
+            
+            // 使用现代API复制到剪贴板
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                // 显示复制成功的视觉反馈
+                const originalText = copyButton.innerHTML;
+                
+                copyButton.innerHTML = '<i class="fa fa-check"></i> 已复制！';
+                copyButton.classList.add('success');
+                
+                setTimeout(() => {
+                    copyButton.innerHTML = originalText;
+                    copyButton.classList.remove('success');
+                }, 2000);
+                
+            }).catch((err) => {
+                console.error('复制失败: ', err);
+                alert('复制失败，请手动复制！');
+                
+                // 回退到传统的选择文本方法
+                outputText.select();
+                document.execCommand('copy');
+            });
+        }
+                
         // 初始化页面
         function init() {
             inputText.dispatchEvent(new Event('input'));
