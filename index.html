@@ -250,7 +250,7 @@
                 </div>
             </div>
         <footer>
-            <p>五萌竖线小二 &copy; 2025 | AI文本处理</p>
+            <p>文本字符清理工具 &copy; 2025 | AI文本处理</p>
         </footer>
     </div>
 
@@ -278,58 +278,49 @@
             newlineCount.textContent = newlines.length;
         });
         
-        // 转换文本函数
-        function convertText() {
-            const startTime = performance.now();
-            const text = inputText.value;
-            
-            if (!text.trim()) {
-                outputText.value = "";
-                return;
-            }
-            
-            // 移除所有 # 和 * 字符
-            const withoutSpecialChars = text.replace(/[#*-]/g, '');
-            const originalSpecialCount = (text.match(/[#*-]/g) || []).length;
-            const newSpecialCount = (withoutSpecialChars.match(/[#*-]/g) || []).length;
-            const removedSpecial = originalSpecialCount - newSpecialCount;
-            
-            // 2. 删除多余空格但保留英文单词间的空格
-            let cleanedText = withoutSpecialChars;
+function convertText() {
+    const startTime = performance.now();
+    const text = inputText.value;
+    
+    if (!text.trim()) {
+        outputText.value = "";
+        return;
+    }
+    
+    // 移除所有 # 和 * 字符
+    const withoutSpecialChars = text.replace(/[#*-]/g, '');
+    const originalSpecialCount = (text.match(/[#*-]/g) || []).length;
+    const newSpecialCount = (withoutSpecialChars.match(/[#*-]/g) || []).length;
+    const removedSpecial = originalSpecialCount - newSpecialCount;
+    
+    // 2. 删除多余空格但保留英文单词间的空格
+    let cleanedText = withoutSpecialChars;
 
-            // 删除中文之间、中英文之间的空格
-            // 保留英文单词和数字之间的空格
-            cleanedText = cleanedText.replace(/([\u4e00-\u9fa5])\s+([\u4e00-\u9fa5])/g, '$1$2'); // 中文之间的空格
-            cleanedText = cleanedText.replace(/([\u4e00-\u9fa5])\s+([a-zA-Z0-9])/g, '$1$2'); // 中文后跟英文/数字的空格
-            cleanedText = cleanedText.replace(/([a-zA-Z0-9])\s+([\u4e00-\u9fa5])/g, '$1$2'); // 英文/数字后跟中文的空格
-            
-            // 3. 压缩多个连续换行符为单个换行符
-            // 正则解释：匹配两个或更多连续的换行符（包括中间有空格的情况）
-            cleanedText = cleanedText.replace(/(\n\s*){2,}/g, '\n');
-            // 压缩多个连续换行符为单个换行符
-            // 正则解释：匹配两个或更多连续的换行符（包括中间有空格的情况）
-            const compressedText = withoutSpecialChars.replace(/(\n\s*){2,}/g, '\n');
-            
-            // 删除开头和结尾的空格
-            cleanedText = cleanedText.trim();
-            // 删除连续多个空格（保留一个）
-            cleanedText = cleanedText.replace(/ {1,}/g, '');
-                       
-            // 计算压缩的换行符数量
-            const originalNewlines = (text.match(/\n/g) || []).length;
-            const newNewlines = (compressedText.match(/\n/g) || []).length;
-            const compressedLines = originalNewlines - newNewlines;
-            
-            outputText.value = compressedText;
-            
-            const endTime = performance.now();
-            const duration = (endTime - startTime).toFixed(2);
-            
-            // 更新统计信息
-            removedSpecialCount.textContent = removedSpecial;
-            compressedNewlines.textContent = compressedLines;
-            timeTaken.textContent = duration;
-        }
+    // 新增：删除每个段落开头和末尾的空格
+    cleanedText = cleanedText.replace(/^\s+/gm, '');    // 删除段落开头的空格
+
+    // 删除中文之间、中英文之间的空格
+    cleanedText = cleanedText.replace(/([\u4e00-\u9fa5])\s+([\u4e00-\u9fa5])/g, '$1$2'); // 中文之间的空格
+    cleanedText = cleanedText.replace(/([a-zA-Z0-9])\s+([\u4e00-\u9fa5])/g, '$1$2'); // 英文/数字后跟中文的空格
+    
+    // 3. 压缩多个连续换行符为单个换行符
+    cleanedText = cleanedText.replace(/(\n\s*){2,}/g, '\n');
+    
+    // 计算压缩的换行符数量
+    const originalNewlines = (text.match(/\n/g) || []).length;
+    const newNewlines = (cleanedText.match(/\n/g) || []).length;
+    const compressedLines = originalNewlines - newNewlines;
+    
+    outputText.value = cleanedText;
+    
+    const endTime = performance.now();
+    const duration = (endTime - startTime).toFixed(2);
+    
+    // 更新统计信息
+    removedSpecialCount.textContent = removedSpecial;
+    compressedNewlines.textContent = compressedLines;
+    timeTaken.textContent = duration;
+}
         // 复制到剪切板函数
         function copyToClipboard() {
             const textToCopy = outputText.value;
